@@ -9,6 +9,7 @@ from collections import Counter
 from collections import deque
 import numpy as np
 import joblib
+from threading import Thread
 
 from utils import CvFpsCalc
 from model import KeyPointClassifier
@@ -24,6 +25,7 @@ def main():
 
     use_brect = True
     mode = 0
+    key = -1
 
     # 0. Initialize
     MODEL_PATH_HAND = "C:\AI-buzz\project_main\model\mediapipe_hand-mediapipehanddetector.tflite"
@@ -34,6 +36,7 @@ def main():
     keypoint_classifier = KeyPointClassifier()
     Dtree = joblib.load(MODEL_DT)
 
+    #contains the labels
     with open('model/keypoint_classifier/keypoint_classifier_label_akshay.csv',
               encoding='utf-8-sig') as f:
         keypoint_classifier_labels = csv.reader(f)
@@ -53,31 +56,25 @@ def main():
     cvFpsCalc = CvFpsCalc(buffer_len=10)
 
     # Load the TFLite model and allocate tensors.
-    interpreter_hand = tf.lite.Interpreter(model_path=MODEL_PATH_HAND)
-    interpreter_landmark = tf.lite.Interpreter(model_path=MODEL_PATH_LANDMARK)
-    interpreter_hand.allocate_tensors()
+    #interpreter_hand = tf.lite.Interpreter(model_path=MODEL_PATH_HAND)
+    interpreter_landmark = tf.lite.Interpreter(model_path=MODEL_PATH_LANDMARK, num_threads = 4)
+    #interpreter_hand.allocate_tensors()
     interpreter_landmark.allocate_tensors()
 
-    caption = ""
+    # Get input and output tensors for landmark detection detection.
+    input_details = interpreter_landmark.get_input_details()
+    output_details = interpreter_landmark.get_output_details()
 
-    #class_names = utils.get_yolov8_classes()
+    caption = ""
+    cv.startWindowThread()
 
     # 1. Capture image from camera
     while True:
 
         fps = cvFpsCalc.get()
-
-        key = cv.waitKey(100)
-        if key == 27:  # ESC
-            break
         number, mode = select_mode(key, mode)
 
         success, frame = camera.read()
-
-        # Determining frame width and frame height 
-        # frame_width = int(camera.get(cv.CAP_PROP_FRAME_WIDTH))
-        # frame_height = int(camera.get(cv.CAP_PROP_FRAME_HEIGHT))               
-        # print(frame_width, frame_height)
 
         if not success:
             break
@@ -91,71 +88,40 @@ def main():
         # 3. Execute model and get inference results
 
         # Get input and output tensors for hand detection.
-        input_details = interpreter_hand.get_input_details()
+        # input_details = interpreter_hand.get_input_details()
 
         #print(input_details)
-        output_details = interpreter_hand.get_output_details()
+        # output_details = interpreter_hand.get_output_details()
         #print(output_details)
 
         # Run the model on input tensor.
-        interpreter_hand.set_tensor(input_details[0]["index"], input_tensor)
-        interpreter_hand.invoke()
+        # interpreter_hand.set_tensor(input_details[0]["index"], input_tensor)
+        # interpreter_hand.invoke()
 
-        box_coord = interpreter_hand.get_tensor(output_details[0]["index"]).reshape(2944, 18)
-        box_scores = interpreter_hand.get_tensor(output_details[1]["index"]).reshape(2944)
-
-        # Get input and output tensors for landmark detection detection.
-        input_details = interpreter_landmark.get_input_details()
-        output_details = interpreter_landmark.get_output_details()
-
-        #print(output_details)
+        #box_coord = interpreter_hand.get_tensor(output_details[0]["index"]).reshape(2944, 18)
+        #box_scores = interpreter_hand.get_tensor(output_details[1]["index"]).reshape(2944)
 
         # Run the model on input tensor.
         interpreter_landmark.set_tensor(input_details[0]["index"], input_tensor)
         interpreter_landmark.invoke()
 
-        score = interpreter_landmark.get_tensor(output_details[0]["index"])  # .reshape(2944, 18)
-        lr = interpreter_landmark.get_tensor(output_details[1]["index"]) # .reshape(2944)
-        hand_landmarks = interpreter_landmark.get_tensor(output_details[2]["index"]).reshape(21, 3)
+        score = interpreter_landmark.get_tensor(output_details[0]["index"])  # .reshape(2944, 18) #  if there is a hand or not.
+        lr = interpreter_landmark.get_tensor(output_details[1]["index"]) # .reshape(2944) #if its left or right hand
+        hand_landmarks = interpreter_landmark.get_tensor(output_details[2]["index"]).reshape(21, 3) #hand coordinates
 
-        # for hand_landmark in hand_landmarks_raw:
-        #     landmark = {'x': hand_landmark[0], 'y': hand_landmark[1], 'z': hand_landmark[2]}
-        #     hand_landmarks.append(landmark)
-
-        # print(hand_landmarks)
-        # continue
-        #print(box_scores)
-        #print(box_coord)
-        #print(scores, lr)  # whether hand is present or not
-        #print(lr)     # whether hand is right or not
-
-        # x = [[0 for i in range(2)] for j in range(21)]
-
-
-        # for index, hand_landmark in enumerate(hand_landmarks):
-        #     x[index][0] = hand_landmark[0]
-        #     x[index][1] = hand_landmark[1]
-
-        # print(x)
 
         if score > SCORE_THRESHOLD:
-            #for hand_landmarks, handedness in zip(results.multi_hand_landmarks):
-                
-            #print(results.multi_hand_landmarks)
-            #print(handedness)
             # Bounding box calculation
             brect = calc_bounding_rect(debug_image, hand_landmarks)
             # Landmark calculation
+            # transforms coordinates to a list and discards Z coordinates. 
             landmark_list = calc_landmark_list_new(debug_image, hand_landmarks)
-
-            #print(landmark_list)
-            #print(len(landmark_list), len(landmark_list[0]))
 
             # Conversion to relative coordinates / normalized coordinates
             pre_processed_landmark_list = pre_process_landmark_akshay(
                 landmark_list)
             
-            #print(len(pre_processed_landmark_list))
+
             # pre_processed_point_history_list = pre_process_point_history(
             #     debug_image, point_history)
             # Write to the dataset file
@@ -173,13 +139,6 @@ def main():
                 if (len(caption) == 15):
                     caption = ""
                 caption = caption + keypoint_classifier_labels[hand_sign_id]
-            
-            #print(hand_sign_id)
-            #continue
-            # if hand_sign_id == 2:  # Point gesture
-            #     point_history.append(landmark_list[8])
-            # else:
-            #     point_history.append([0, 0])
 
             # Drawing part
             debug_image = draw_bounding_rect(use_brect, debug_image, brect)
@@ -202,34 +161,15 @@ def main():
 
         # Screen reflection #############################################################
         cv.imshow("Inference Video", debug_image)
-        #print(caption)
 
         # 4. Post-process inference results
         #selected_indices = tf_utils.postprocess_for_yolov8(output_boxes, output_scores)
 
-        # 5. Display processed image
-        # for idx in selected_indices:
-        #     cv.rectangle(
-        #         img=resized_frame,
-        #         pt1=(int(output_boxes[idx][0]), int(output_boxes[idx][1])),
-        #         pt2=(int(output_boxes[idx][2]), int(output_boxes[idx][3])),
-        #         color=(0, 255, 0),
-        #         thickness=2,
-        #     )
-        #     cv.putText(
-        #         img=resized_frame,
-        #         text=class_names[int(output_classes[idx])],
-        #         org=(int(output_boxes[idx][0]), int(output_boxes[idx][1])),
-        #         fontFace=cv.FONT_HERSHEY_TRIPLEX,
-        #         fontScale=0.5,
-        #         color=(0, 255, 0),
-        #         thickness=1,
-        #     )
+        key = cv.waitKey(20)
+        if key & 0xFF == ord("d"):
+            break
 
-
-        #cv.imshow("Inference Video", resized_frame)
-
-        if cv.waitKey(20) & 0xFF == ord("d"):
+        if key == 27:  # ESC
             break
 
     # 6. Cleanup resources
@@ -352,59 +292,59 @@ def pre_process_landmark_akshay(landmark_list):
     #     temp_landmark_list[index][0] = temp_landmark_list[index][0] - base_x
     #     temp_landmark_list[index][1] = temp_landmark_list[index][1] - base_y
 
-    distance = []
-    distance.append(landmark_list[1][0] - landmark_list[0][0])
-    distance.append(landmark_list[1][1] - landmark_list[1][1])
-    distance.append(landmark_list[2][0] - landmark_list[1][0])
-    distance.append(landmark_list[2][1] - landmark_list[1][1])
-    distance.append(landmark_list[3][0] - landmark_list[2][0])
-    distance.append(landmark_list[3][1] - landmark_list[2][1])
-    distance.append(landmark_list[4][0] - landmark_list[3][0])
-    distance.append(landmark_list[4][1] - landmark_list[3][1])
-    distance.append(landmark_list[6][0] - landmark_list[5][0])
-    distance.append(landmark_list[6][1] - landmark_list[5][1])
-    distance.append(landmark_list[7][0] - landmark_list[6][0])
-    distance.append(landmark_list[7][1] - landmark_list[6][1])
-    distance.append(landmark_list[8][0] - landmark_list[7][0])
-    distance.append(landmark_list[8][1] - landmark_list[7][1])
-    distance.append(landmark_list[10][0] - landmark_list[9][0])
-    distance.append(landmark_list[10][1] - landmark_list[9][1])
-    distance.append(landmark_list[11][0] - landmark_list[10][0])
-    distance.append(landmark_list[11][1] - landmark_list[10][1])
-    distance.append(landmark_list[12][0] - landmark_list[11][0])
-    distance.append(landmark_list[12][1] - landmark_list[11][1])
-    distance.append(landmark_list[14][0] - landmark_list[13][0])
-    distance.append(landmark_list[14][1] - landmark_list[13][1])
-    distance.append(landmark_list[15][0] - landmark_list[14][0])
-    distance.append(landmark_list[15][1] - landmark_list[14][1])
-    distance.append(landmark_list[16][0] - landmark_list[15][0])
-    distance.append(landmark_list[16][1] - landmark_list[15][1])
-    distance.append(landmark_list[18][0] - landmark_list[17][0])
-    distance.append(landmark_list[18][1] - landmark_list[17][1])
-    distance.append(landmark_list[19][0] - landmark_list[18][0])
-    distance.append(landmark_list[19][1] - landmark_list[18][1])
-    distance.append(landmark_list[20][0] - landmark_list[19][0])
-    distance.append(landmark_list[20][1] - landmark_list[19][1])
-    distance.append(landmark_list[5][0] - landmark_list[0][0])
-    distance.append(landmark_list[5][1] - landmark_list[0][1])
-    distance.append(landmark_list[17][0] - landmark_list[0][0])
-    distance.append(landmark_list[17][1] - landmark_list[0][1])
-    distance.append(landmark_list[5][0] - landmark_list[9][0])
-    distance.append(landmark_list[5][1] - landmark_list[9][1])
-    distance.append(landmark_list[9][0] - landmark_list[13][0])
-    distance.append(landmark_list[9][1] - landmark_list[13][1])
-    distance.append(landmark_list[13][0] - landmark_list[17][0])
-    distance.append(landmark_list[13][1] - landmark_list[17][1])
+    rel_dist = []
+    rel_dist.append(landmark_list[1][0] - landmark_list[0][0])
+    rel_dist.append(landmark_list[1][1] - landmark_list[1][1])
+    rel_dist.append(landmark_list[2][0] - landmark_list[1][0])
+    rel_dist.append(landmark_list[2][1] - landmark_list[1][1])
+    rel_dist.append(landmark_list[3][0] - landmark_list[2][0])
+    rel_dist.append(landmark_list[3][1] - landmark_list[2][1])
+    rel_dist.append(landmark_list[4][0] - landmark_list[3][0])
+    rel_dist.append(landmark_list[4][1] - landmark_list[3][1])
+    rel_dist.append(landmark_list[6][0] - landmark_list[5][0])
+    rel_dist.append(landmark_list[6][1] - landmark_list[5][1])
+    rel_dist.append(landmark_list[7][0] - landmark_list[6][0])
+    rel_dist.append(landmark_list[7][1] - landmark_list[6][1])
+    rel_dist.append(landmark_list[8][0] - landmark_list[7][0])
+    rel_dist.append(landmark_list[8][1] - landmark_list[7][1])
+    rel_dist.append(landmark_list[10][0] - landmark_list[9][0])
+    rel_dist.append(landmark_list[10][1] - landmark_list[9][1])
+    rel_dist.append(landmark_list[11][0] - landmark_list[10][0])
+    rel_dist.append(landmark_list[11][1] - landmark_list[10][1])
+    rel_dist.append(landmark_list[12][0] - landmark_list[11][0])
+    rel_dist.append(landmark_list[12][1] - landmark_list[11][1])
+    rel_dist.append(landmark_list[14][0] - landmark_list[13][0])
+    rel_dist.append(landmark_list[14][1] - landmark_list[13][1])
+    rel_dist.append(landmark_list[15][0] - landmark_list[14][0])
+    rel_dist.append(landmark_list[15][1] - landmark_list[14][1])
+    rel_dist.append(landmark_list[16][0] - landmark_list[15][0])
+    rel_dist.append(landmark_list[16][1] - landmark_list[15][1])
+    rel_dist.append(landmark_list[18][0] - landmark_list[17][0])
+    rel_dist.append(landmark_list[18][1] - landmark_list[17][1])
+    rel_dist.append(landmark_list[19][0] - landmark_list[18][0])
+    rel_dist.append(landmark_list[19][1] - landmark_list[18][1])
+    rel_dist.append(landmark_list[20][0] - landmark_list[19][0])
+    rel_dist.append(landmark_list[20][1] - landmark_list[19][1])
+    rel_dist.append(landmark_list[5][0] - landmark_list[0][0])
+    rel_dist.append(landmark_list[5][1] - landmark_list[0][1])
+    rel_dist.append(landmark_list[17][0] - landmark_list[0][0])
+    rel_dist.append(landmark_list[17][1] - landmark_list[0][1])
+    rel_dist.append(landmark_list[5][0] - landmark_list[9][0])
+    rel_dist.append(landmark_list[5][1] - landmark_list[9][1])
+    rel_dist.append(landmark_list[9][0] - landmark_list[13][0])
+    rel_dist.append(landmark_list[9][1] - landmark_list[13][1])
+    rel_dist.append(landmark_list[13][0] - landmark_list[17][0])
+    rel_dist.append(landmark_list[13][1] - landmark_list[17][1])
 
     # Normalization
-    max_value = max(list(map(abs, distance)))
+    max_value = max(list(map(abs, rel_dist)))
 
     def normalize_(n):
         return n / max_value
 
-    distance = list(map(normalize_, distance))
+    rel_dist = list(map(normalize_, rel_dist))
 
-    return distance
+    return rel_dist
 
 
 def select_mode(key, mode):
