@@ -33,7 +33,7 @@ def main():
 
     # 0. Initialize
     MODEL_PATH_LANDMARK = "C:\AI-buzz\project_main\model\mediapipe_hand-mediapipehandlandmarkdetector.tflite"
-    MODEL_GESTURE = "C:\AI-buzz\project_main\DT_gesture_model.pkl"
+    MODEL_GESTURE = "C:\AI-buzz\project_main\DT_gesture_model_akshay.pkl"
     #LABEL_PATH = utils.get_label_path()
 
     gesture_recognition_model = GestureClassifier()
