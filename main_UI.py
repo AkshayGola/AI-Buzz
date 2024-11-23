@@ -23,7 +23,7 @@ MEDIAPIPE_WIDTH = 256
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
-SCORE_THRESHOLD = 0.90
+SCORE_THRESHOLD = 0.80
 key = -1
 
 def main():
@@ -151,7 +151,7 @@ def main():
                 landmark_list)
 
             # Write to the dataset file
-            #logging_csv(number, mode, pre_processed_landmark_list)
+            logging_csv(number, mode, pre_processed_landmark_list)
 
             hand_sign_id = Dtree.predict((np.array(pre_processed_landmark_list)).reshape(1, 42))
             
@@ -289,8 +289,8 @@ def preprocess_for_mediapipe(frame):
 def logging_csv(number, mode, landmark_list):
     if mode == 0:
         pass
-    if mode == 1 and (0 <= number <= 9):
-        csv_path = 'model/gesture_classifier/gesture_akshay.csv'
+    if mode == 1 and (0 <= number <= 26):
+        csv_path = 'model/gesture_classifier/gesture_train_akshay.csv'
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *landmark_list])
@@ -433,14 +433,34 @@ def pre_process_landmark_akshay(landmark_list):
 
 def change_mode(key, mode):
     number = -1
+    if key == -1:
+        return number, mode
     if 48 <= key <= 57:  # 0 ~ 9
         number = key - 48
     if key == 110:  # n
         mode = 0
-    if key == 116:  # t for training
+    if chr(key) == 'k':  # press k for training
         mode = 1
     if key == 104:  # h
         mode = 2
+    elif chr(key) == 'q':
+        number = 18
+    elif chr(key) == 'w':
+        number = 19
+    elif chr(key) == 'e':
+        number = 20
+    elif chr(key) == 'r':
+        number = 21
+    elif chr(key) == 't':
+        number = 22
+    elif chr(key) == 'y':
+        number = 23
+    elif chr(key) == 'u':
+        number = 24
+    elif chr(key) == 'i':
+        number = 25
+    elif chr(key) == 'o':
+        number = 26
     return number, mode
 
 def draw_landmarks(image, landmark_point):
