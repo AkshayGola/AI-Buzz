@@ -91,16 +91,19 @@ def main():
   
     # Create a label and display it on app 
     label_widget = Label(app) 
-    label_widget.grid(row=1, column=0)
+    label_widget.pack()#side = LEFT, expand = True, fill = BOTH)
 
-    cor_btn = Button(app, text = "spellcheck_but")
-    sug_btn = Button(app, text = "sug_but")
+    button_frame = Frame(app, width=200, height=100)
+
+    cor_btn = Button(button_frame, text = "spellcheck_but", height=2 )
+    sug_btn1 = Button(button_frame, text = "sug_but1", height=2)
+    sug_btn2 = Button(button_frame, text = "sug_but2", height=2)
     #sug_btn.pack(side = 'top')
 
     def auto_comp(word_):
         autocomplete = AutoComplete(words = valid_words_dict)
         word_sug_list = autocomplete.search(word=word_, max_cost=3, size=3)
-        print(word_sug_list)
+        #print(word_sug_list)
         return word_sug_list
 
     # 1. Capture image from camera
@@ -112,7 +115,8 @@ def main():
         nonlocal word
         nonlocal word_sug_list
         nonlocal cor_btn
-        nonlocal sug_btn
+        nonlocal sug_btn1
+        nonlocal sug_btn2
 
         fps = cvFpsCalc.get()
         number, mode = change_mode(key, mode)
@@ -201,30 +205,42 @@ def main():
                     caption = caption + gesture_classifier_labels[hand_sign_id]
                     word = word + gesture_classifier_labels[hand_sign_id]
                 key = -1
+                used_word_list = []        # list to avoid repitions
                 try:
                     word_sug_list = check_word_spell(word)
                     #print(word_sug_list[0])
                     cor_btn['text'] = word_sug_list[0].upper()
                     cor_btn.configure(command=lambda: update_word(cor_btn['text']))
-                    #cor_btn['command'] = update_word("hey")
+                    used_word_list.append(cor_btn['text'])
                 except:
                     pass
                 try:
                     word_cor_list = auto_comp(word)
-                    print(word_cor_list[0])
-                    sug_btn['text'] = word_cor_list[0][0].upper()
-                    #sug_btn = Button(app, text = word
-                    # _cor_list[0], command = update_word(word_cor_list[0]))
-                    sug_btn.configure(command=lambda: update_word(sug_btn['text']))
-                    #sug_btn['command'] = update_word("hey")
+                    #next(x for x in word_cor_list if x != used_word_list[-1])
+                    for word_cor in word_cor_list:
+                        if (word_cor[0].upper() not in used_word_list):
+                            print("label1", word_cor[0].upper())
+                            sug_btn1['text'] = word_cor[0].upper()
+                            break
+                    sug_btn1.configure(command=lambda: update_word(sug_btn1['text']))
+                    used_word_list.append(sug_btn1['text'])
+                except:
+                    pass
+                try:
+                    #word_cor_list = auto_comp(word)
+                    #next(x for x in word_cor_list if x != used_word_list[-1])
+                    for word_cor in word_cor_list:
+                        if (word_cor[0].upper() not in used_word_list):
+                            print("label1", word_cor[0].upper())
+                            sug_btn2['text'] = word_cor[0].upper()
+                            break
+                    sug_btn2.configure(command=lambda: update_word(sug_btn2['text']))
                 except:
                     pass
 
-            #cor_btn.pack(side = 'top')
-            #sug_btn.pack(side = 'top')
-
-            cor_btn.grid(row = 2, column=0, padx = 0, pady = 5)
-            sug_btn.grid(row = 2, column=1, padx = 50, pady = 5)
+            cor_btn.pack(side = LEFT, expand = True, fill = BOTH)
+            sug_btn1.pack(side = LEFT, expand = True, fill = BOTH)  
+            sug_btn2.pack(side = LEFT, expand = True, fill = BOTH)              
 
             # Drawing part
             debug_frame = draw_bounding_rect(use_brect, debug_frame, brect)
@@ -261,7 +277,9 @@ def main():
         photo_image = ImageTk.PhotoImage(image=captured_image) 
   
         # Displaying photoimage in the label 
-        label_widget.photo_image = photo_image 
+        label_widget.photo_image = photo_image
+
+        button_frame.pack(side = BOTTOM)
   
         # Configure image in the label 
         label_widget.configure(image=photo_image) 
@@ -274,8 +292,8 @@ def main():
         #     break
 
     # Create a button to open the camera in GUI app 
-    button1 = Button(app, text="Open Camera", command=open_camera_) 
-    button1.grid(row = 0, column=0) 
+    camera_button = Button(app, text="Open Camera", command=open_camera_) 
+    camera_button.pack(side = BOTTOM, expand = True, fill = BOTH)
   
     # Create an infinite loop for displaying app on screen 
     app.mainloop()
@@ -288,7 +306,7 @@ def check_word_spell(word):
 
     # Will suggest similar words 
     # form given dictionary 
-    print(d.suggest(word))
+    #print(d.suggest(word))
     return d.suggest(word)
 
 

@@ -1,0 +1,3 @@
+pip install opencv-python
+
+//TODO: include all dependencies and required python modules.
