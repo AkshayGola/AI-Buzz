@@ -1,3 +1,6 @@
 pip install opencv-python
 
 //TODO: include all dependencies and required python modules.
+
+pip install --trusted-host=pypi.org --trusted-host=files.pythonhosted.org --user pyenchant
+pip install --trusted-host=pypi.org --trusted-host=files.pythonhosted.org --user fast_autocomplete 

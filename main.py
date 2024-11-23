@@ -9,10 +9,11 @@ from collections import Counter
 from collections import deque
 import numpy as np
 import joblib
-from threading import Thread
+#include "opencv2/highgui.hpp"
+
 
 from utils import CvFpsCalc
-from model import KeyPointClassifier
+from model import GestureClassifier
 
 MEDIAPIPE_HEIGHT = 256
 MEDIAPIPE_WIDTH = 256
@@ -30,18 +31,18 @@ def main():
     # 0. Initialize
     MODEL_PATH_HAND = "C:\AI-buzz\project_main\model\mediapipe_hand-mediapipehanddetector.tflite"
     MODEL_PATH_LANDMARK = "C:\AI-buzz\project_main\model\mediapipe_hand-mediapipehandlandmarkdetector.tflite"
-    MODEL_DT = "C:\AI-buzz\project_main\DT_model.pkl"
+    MODEL_GESTURE = "C:\AI-buzz\project_main\DT_gesture_model.pkl"
     #LABEL_PATH = utils.get_label_path()
 
-    keypoint_classifier = KeyPointClassifier()
-    Dtree = joblib.load(MODEL_DT)
+    gesture_recognition_model = GestureClassifier()
+    Dtree = joblib.load(MODEL_GESTURE)
 
     #contains the labels
-    with open('model/keypoint_classifier/keypoint_classifier_label_akshay.csv',
+    with open('model/gesture_classifier/gesture_classifier_label_akshay.csv',
               encoding='utf-8-sig') as f:
-        keypoint_classifier_labels = csv.reader(f)
-        keypoint_classifier_labels = [
-            row[0] for row in keypoint_classifier_labels
+        gesture_classifier_labels = csv.reader(f)
+        gesture_classifier_labels = [
+            row[0] for row in gesture_classifier_labels
         ]
 
     camera = cv.VideoCapture(0)
@@ -66,13 +67,14 @@ def main():
     output_details = interpreter_landmark.get_output_details()
 
     caption = ""
+    word = ""
     cv.startWindowThread()
 
     # 1. Capture image from camera
     while True:
 
         fps = cvFpsCalc.get()
-        number, mode = select_mode(key, mode)
+        number, mode = change_mode(key, mode)
 
         success, frame = camera.read()
 
@@ -109,6 +111,10 @@ def main():
         lr = interpreter_landmark.get_tensor(output_details[1]["index"]) # .reshape(2944) #if its left or right hand
         hand_landmarks = interpreter_landmark.get_tensor(output_details[2]["index"]).reshape(21, 3) #hand coordinates
 
+        if (key == 99):            #press c for backspace
+            caption = caption[:-1]
+            word = word[:-1]
+            #continue
 
         if score > SCORE_THRESHOLD:
             # Bounding box calculation
@@ -135,10 +141,15 @@ def main():
             hand_sign_id = hand_sign_id.item()
 
             print(key)
-            if mode == 0 and key == 32:      # space
-                if (len(caption) == 15):
-                    caption = ""
-                caption = caption + keypoint_classifier_labels[hand_sign_id]
+            if mode == 0 and key != -1:      # space
+                if (len(caption) == 14):
+                    caption = word
+                if (key == 98):
+                    caption = caption + " "
+                    word = ""
+                elif  (key == 32):
+                    caption = caption + gesture_classifier_labels[hand_sign_id]
+                    word = word + gesture_classifier_labels[hand_sign_id]
 
             # Drawing part
             debug_image = draw_bounding_rect(use_brect, debug_image, brect)
@@ -146,7 +157,7 @@ def main():
             debug_image = draw_info_text(
                 debug_image,
                 brect,
-                keypoint_classifier_labels[hand_sign_id]
+                gesture_classifier_labels[hand_sign_id]
             )
         # else:
         # point_history.append([0, 0])
@@ -159,8 +170,11 @@ def main():
         debug_image = cv.putText(debug_image, caption, (int(frame_width/4) + 5, frame_height - 5),
                    cv.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv.LINE_AA)
 
+
         # Screen reflection #############################################################
         cv.imshow("Inference Video", debug_image)
+
+        cv.displayOverlay("Inference Video", caption, 0)
 
         # 4. Post-process inference results
         #selected_indices = tf_utils.postprocess_for_yolov8(output_boxes, output_scores)
@@ -192,7 +206,7 @@ def logging_csv(number, mode, landmark_list):
     if mode == 0:
         pass
     if mode == 1 and (0 <= number <= 9):
-        csv_path = 'model/keypoint_classifier/keypoint_akshay.csv'
+        csv_path = 'model/gesture_classifier/gesture_akshay.csv'
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *landmark_list])
@@ -347,13 +361,13 @@ def pre_process_landmark_akshay(landmark_list):
     return rel_dist
 
 
-def select_mode(key, mode):
+def change_mode(key, mode):
     number = -1
     if 48 <= key <= 57:  # 0 ~ 9
         number = key - 48
     if key == 110:  # n
         mode = 0
-    if key == 107:  # k
+    if key == 116:  # t for training
         mode = 1
     if key == 104:  # h
         mode = 2

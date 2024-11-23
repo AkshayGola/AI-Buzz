@@ -23,17 +23,15 @@ MEDIAPIPE_WIDTH = 256
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
-SCORE_THRESHOLD = 0.5
+SCORE_THRESHOLD = 0.90
 key = -1
 
 def main():
-    #global key
     use_brect = True
     mode = 0
     word_sug_list = []
 
     # 0. Initialize
-    MODEL_PATH_HAND = "C:\AI-buzz\project_main\model\mediapipe_hand-mediapipehanddetector.tflite"
     MODEL_PATH_LANDMARK = "C:\AI-buzz\project_main\model\mediapipe_hand-mediapipehandlandmarkdetector.tflite"
     MODEL_GESTURE = "C:\AI-buzz\project_main\DT_gesture_model.pkl"
     #LABEL_PATH = utils.get_label_path()
@@ -61,9 +59,7 @@ def main():
     cvFpsCalc = CvFpsCalc(buffer_len=10)
 
     # Load the TFLite model and allocate tensors.
-    #interpreter_hand = tf.lite.Interpreter(model_path=MODEL_PATH_HAND)
     interpreter_landmark = tf.lite.Interpreter(model_path=MODEL_PATH_LANDMARK, num_threads = 4)
-    #interpreter_hand.allocate_tensors()
     interpreter_landmark.allocate_tensors()
 
     # Get input and output tensors for landmark detection detection.
@@ -72,7 +68,6 @@ def main():
 
     caption = ""
     word = ""
-    #cv.startWindowThread()
 
     with open('C:/Users/agola/Downloads/google-10000-english.txt') as word_file:
         valid_words = list(word_file.read().split())
@@ -84,26 +79,23 @@ def main():
     # Create a GUI app 
     app = Tk() 
 
-    # Bind the app with Escape keyboard to 
-    # quit app whenever pressed 
+    # Bind the app with Escape keyboard to quit app whenever pressed 
     app.bind('<Escape>', lambda e: app.quit())
     app.bind('<KeyPress>', lambda e: update_key(e))
   
     # Create a label and display it on app 
     label_widget = Label(app) 
-    label_widget.pack()#side = LEFT, expand = True, fill = BOTH)
+    label_widget.pack()
 
     button_frame = Frame(app, width=200, height=100)
 
     cor_btn = Button(button_frame, text = "spellcheck_but", height=2 )
     sug_btn1 = Button(button_frame, text = "sug_but1", height=2)
     sug_btn2 = Button(button_frame, text = "sug_but2", height=2)
-    #sug_btn.pack(side = 'top')
 
     def auto_comp(word_):
         autocomplete = AutoComplete(words = valid_words_dict)
         word_sug_list = autocomplete.search(word=word_, max_cost=3, size=3)
-        #print(word_sug_list)
         return word_sug_list
 
     # 1. Capture image from camera
@@ -134,20 +126,6 @@ def main():
 
         # 3. Execute model and get inference results
 
-        # Get input and output tensors for hand detection.
-        # input_details = interpreter_hand.get_input_details()
-
-        #print(input_details)
-        # output_details = interpreter_hand.get_output_details()
-        #print(output_details)
-
-        # Run the model on input tensor.
-        # interpreter_hand.set_tensor(input_details[0]["index"], input_tensor)
-        # interpreter_hand.invoke()
-
-        #box_coord = interpreter_hand.get_tensor(output_details[0]["index"]).reshape(2944, 18)
-        #box_scores = interpreter_hand.get_tensor(output_details[1]["index"]).reshape(2944)
-
         # Run the model on input tensor.
         interpreter_landmark.set_tensor(input_details[0]["index"], input_tensor)
         interpreter_landmark.invoke()
@@ -159,7 +137,7 @@ def main():
         if (key == 99):            #press c for backspace
             caption = caption[:-1]
             word = word[:-1]
-            #continue
+            key = -1
 
         if score > SCORE_THRESHOLD:
             # Bounding box calculation
@@ -172,29 +150,21 @@ def main():
             pre_processed_landmark_list = pre_process_landmark_akshay(
                 landmark_list)
 
-
-            # pre_processed_point_history_list = pre_process_point_history(
-            #     debug_image, point_history)
             # Write to the dataset file
             #logging_csv(number, mode, pre_processed_landmark_list)
-
-            # Hand sign classification
-            #hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
 
             hand_sign_id = Dtree.predict((np.array(pre_processed_landmark_list)).reshape(1, 42))
             
             hand_sign_id = hand_sign_id.item()
 
             def update_word(word_):
-                print("inside update_word")
                 nonlocal caption
                 nonlocal word
                 caption = caption[:-len(word)]
                 caption = caption + word_
-                #caption.replace(word, word_)
                 word = word_
 
-            print(key, word)
+            print(key, word)      # remove during submission
             if mode == 0 and key != -1:      # space
                 if (len(caption) == 14):
                     caption = word
@@ -205,7 +175,7 @@ def main():
                     caption = caption + gesture_classifier_labels[hand_sign_id]
                     word = word + gesture_classifier_labels[hand_sign_id]
                 key = -1
-                used_word_list = []        # list to avoid repitions
+                used_word_list = []        # list to avoid repititions
                 try:
                     word_sug_list = check_word_spell(word)
                     #print(word_sug_list[0])
@@ -216,10 +186,8 @@ def main():
                     pass
                 try:
                     word_cor_list = auto_comp(word)
-                    #next(x for x in word_cor_list if x != used_word_list[-1])
                     for word_cor in word_cor_list:
                         if (word_cor[0].upper() not in used_word_list):
-                            print("label1", word_cor[0].upper())
                             sug_btn1['text'] = word_cor[0].upper()
                             break
                     sug_btn1.configure(command=lambda: update_word(sug_btn1['text']))
@@ -228,7 +196,6 @@ def main():
                     pass
                 try:
                     #word_cor_list = auto_comp(word)
-                    #next(x for x in word_cor_list if x != used_word_list[-1])
                     for word_cor in word_cor_list:
                         if (word_cor[0].upper() not in used_word_list):
                             print("label1", word_cor[0].upper())
@@ -244,16 +211,13 @@ def main():
 
             # Drawing part
             debug_frame = draw_bounding_rect(use_brect, debug_frame, brect)
-            debug_frame = draw_landmarks(debug_frame, landmark_list)
+            debug_frame = draw_landmarks(debug_frame, landmark_list)   #uncomment to include landmark in frame
             debug_frame = draw_info_text(
                 debug_frame,
                 brect,
                 gesture_classifier_labels[hand_sign_id]
             )
-        # else:
-        # point_history.append([0, 0])
 
-        #debug_image = draw_point_history(debug_image, point_history)
         debug_frame = draw_info(debug_frame, fps, mode, number)
 
         #Inserting caption
@@ -304,31 +268,8 @@ def check_word_spell(word):
   
     d.check(word)
 
-    # Will suggest similar words 
-    # form given dictionary 
-    #print(d.suggest(word))
+    # Will suggest similar words from given dictionary 
     return d.suggest(word)
-
-
-# def get_word_sug(word_, ):
-#     with open('C:/Users/agola/Downloads/google-10000-english.txt') as word_file:
-#         valid_words = list(word_file.read().split())
-
-#     valid_words_dict = {}
-#     for valid_word in valid_words:
-#         valid_words_dict[valid_word] = {}
-
-    # content_files = {
-    # 'words': {
-    #     'filepath': "C:/Users/agola/Downloads/words_dictionary.json",
-    #     'compress': True  # means compress the graph data in memory
-    #     }
-    # }
-
-    #autocomplete = autocomplete_factory(content_files=content_files)
-    autocomplete = AutoComplete(words = valid_words_dict)
-    word_sug_list = autocomplete.search(word=word_, max_cost=3, size=3)
-    print(word_sug_list)
 
 def update_key(event):
     global key
@@ -343,7 +284,6 @@ def preprocess_for_mediapipe(frame):
     input_tensor = tf.expand_dims(input_tensor, axis=0)
     # Normalize the pixel values to the range [0, 1]
     input_tensor = input_tensor / 255.0
-
     return input_tensor, resized_frame
 
 def logging_csv(number, mode, landmark_list):
@@ -354,11 +294,6 @@ def logging_csv(number, mode, landmark_list):
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *landmark_list])
-    # if mode == 2 and (0 <= number <= 9):
-    #     csv_path = 'model/point_history_classifier/point_history.csv'
-    #     with open(csv_path, 'a', newline="") as f:
-    #         writer = csv.writer(f)
-    #         writer.writerow([number, *point_history_list])
     return
 
 def calc_bounding_rect(image, landmarks):
@@ -440,15 +375,6 @@ def pre_process_landmark(landmark_list):
 
 def pre_process_landmark_akshay(landmark_list):
     temp_landmark_list = copy.deepcopy(landmark_list)
-
-    # Convert to relative coordinates
-    # base_x, base_y = 0, 0
-    # for index, landmark_point in enumerate(temp_landmark_list):
-    #     if index == 0:
-    #         base_x, base_y = landmark_point[0], landmark_point[1]
-
-    #     temp_landmark_list[index][0] = temp_landmark_list[index][0] - base_x
-    #     temp_landmark_list[index][1] = temp_landmark_list[index][1] - base_y
 
     rel_dist = []
     rel_dist.append(landmark_list[1][0] - landmark_list[0][0])
