@@ -3,18 +3,13 @@ import cv2 as cv
 import tensorflow as tf
 import csv
 import copy
-import argparse
 import itertools
-from collections import Counter
-from collections import deque
 import numpy as np
 import joblib
 from tkinter import *
 from PIL import Image, ImageTk 
 import enchant
-from fast_autocomplete import AutoComplete, autocomplete_factory
-
-
+from fast_autocomplete import AutoComplete
 from utils import CvFpsCalc
 from model import GestureClassifier
 
@@ -32,8 +27,8 @@ def main():
     word_sug_list = []
 
     # 0. Initialize
-    MODEL_PATH_LANDMARK = "C:\AI-buzz\project_main\model\mediapipe_hand-mediapipehandlandmarkdetector.tflite"
-    MODEL_GESTURE = "C:\AI-buzz\project_main\DT_gesture_model_akshay.pkl"
+    MODEL_PATH_LANDMARK = "model\mediapipe_hand-mediapipehandlandmarkdetector.tflite"
+    MODEL_GESTURE = "DT_gesture_model_akshay.pkl"
     #LABEL_PATH = utils.get_label_path()
 
     gesture_recognition_model = GestureClassifier()
@@ -69,7 +64,7 @@ def main():
     caption = ""
     word = ""
 
-    with open('C:/Users/agola/Downloads/google-10000-english.txt') as word_file:
+    with open('google-10000-english.txt') as word_file:
         valid_words = list(word_file.read().split())
 
     valid_words_dict = {}
