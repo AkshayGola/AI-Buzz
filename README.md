@@ -1,21 +1,5 @@
-# AI Buzz Phase 2 Submission
-
-## Idea Details
-- Team Name: Fire and Water
-- Idea Title: Hand sign recognition for speech-impaired people
-- Idea url: https://aibuzz.qualcomm.com/idea/3408
-- Team Members
-  - Akshay Gola (agola)
-  - Kailashnath K (kailashn)
-- Programming language used: Python
-- AI Hub Model links
-  - https://aihub.qualcomm.com/models/mediapipe_hand
-- Target device
-  - Mobile
-
-
 ## Implementation Summary
-This project was developed to train and recognise the symbols in ASL (American Sign Language). As a starting point we have focused on training and recognising the **ASL alphabets** using the MediaPipe model. When running the application, the user can make the gesture corresponding to an alphabet and the application recognizes it. The symbols can be recorded to construct sentences with the help of auto-suggestion and spell-check.
+This project was developed to train and recognise the symbols in ASL (American Sign Language). As a starting point we have focused on training and recognising the **ASL alphabets** using the Qualcomm's MediaPipe-Hand-Detection model. This model is optimized for Real‑time hand detection on mobile and edge. When running the application, the user can make the gesture corresponding to an alphabet and the application recognizes it. The symbols can be recorded to construct sentences with the help of auto-suggestion and spell-check.
 
 ### app.py
 This file is the starting point of the application. It calls and imports the necessary libraries and the pretrained model. 
@@ -59,7 +43,7 @@ Make sure to include the pre-requisite packages/assumptions (e.g. Java, Android 
 3) Install the dependencies mentioned in the requirements.txt file using pip install -r requirements.txt
 4) Run the app.py file. 
 
-## Expected output / behaviour
+## Expected output/behaviour (Instructions to use)
 <!-- 
 Provide details of expected behaviour and output.
 Mention how the reviewer can validate the prototype is doing what it is intended to.
@@ -72,14 +56,14 @@ This opens the camera and the frames are read.
 Note: Ensure your camera is opened
 
 Choose a word to record. Eg: "FLOW"
-**1) Take reference from the attached image and make the gesture from your right hand of 1st letter of the word. When the alphabet is recognised, press the spacebar to record the alphabet. 
+1) Take reference from the attached image and make the gesture from your right hand of 1st letter of the word. When the alphabet is recognised, press the spacebar to record the alphabet. 
 2) Continue to make the gestures of the subsequent letters and record them. 
-3) Auto complete and Spell check suggestions are shown in the buttons below the caption. Click on the button with the intended word to record it. **
+3) Auto complete and Spell check suggestions are shown in the buttons below the caption. Click on the button with the intended word to record it.
 
 Note: 
-**1) Click the spacebar to record the recognised letter.
+1) Click the spacebar to record the recognised letter.
 2) To record a space, input letter 'B' from the keyboard. 
-3) To clear the last alphabet, input letter 'C' from the keyboard**
+3) To clear the last alphabet, input letter 'C' from the keyboard
 
 ![pngtree-aphabets-by-fingers-from-american-sign-language-png-image_3714747](https://github.qualcomm.com/AIBuzz2024/Sign_Language_Tutor/assets/29673/352d6a2f-e87e-48ee-b89c-2fedfe1a9b61)
 
