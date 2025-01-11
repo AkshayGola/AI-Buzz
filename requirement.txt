@@ -1,6 +1,8 @@
-pip install opencv-python
-
-//TODO: include all dependencies and required python modules.
-OpenCV 3.4.2 or Later
-pip install --trusted-host=pypi.org --trusted-host=files.pythonhosted.org --user pyenchant
-pip install --trusted-host=pypi.org --trusted-host=files.pythonhosted.org --user fast_autocomplete 
+opencv-python
+tensorflow
+joblib
+Pillow
+pyenchant
+fast_autocomplete
+fast-autocomplete[levenshtein]
+scikit-learn==1.3.2
