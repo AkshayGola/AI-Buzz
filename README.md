@@ -65,7 +65,7 @@ Note:
 2) To record a space, input letter 'B' from the keyboard. 
 3) To clear the last alphabet, input letter 'C' from the keyboard
 
-!(https://d.newsweek.com/en/full/1394686/asl-getty-images.jpg)
+!(ASL.jpg)
 
 ## Any additional steps required for running
 - [x] NA
