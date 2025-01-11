@@ -65,8 +65,7 @@ Note:
 2) To record a space, input letter 'B' from the keyboard. 
 3) To clear the last alphabet, input letter 'C' from the keyboard
 
-![pngtree-aphabets-by-fingers-from-american-sign-language-png-image_3714747](https://github.qualcomm.com/AIBuzz2024/Sign_Language_Tutor/assets/29673/352d6a2f-e87e-48ee-b89c-2fedfe1a9b61)
-
+!(https://d.newsweek.com/en/full/1394686/asl-getty-images.jpg)
 
 ## Any additional steps required for running
 - [x] NA
