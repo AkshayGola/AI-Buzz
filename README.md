@@ -72,14 +72,14 @@ This opens the camera and the frames are read.
 Note: Ensure your camera is opened
 
 Choose a word to record. Eg: "FLOW"
-1) Take reference from the attached image and make the gesture of 1st letter of the word. When the alphabet is recognised, press the spacebar to record the alphabet. 
+**1) Take reference from the attached image and make the gesture from your right hand of 1st letter of the word. When the alphabet is recognised, press the spacebar to record the alphabet. 
 2) Continue to make the gestures of the subsequent letters and record them. 
-3) Auto complete and Spell check suggestions are shown in the buttons below the caption. Click on the button with the intended word to record it. 
+3) Auto complete and Spell check suggestions are shown in the buttons below the caption. Click on the button with the intended word to record it. **
 
 Note: 
-1) Click the spacebar to record the recognised letter.
+**1) Click the spacebar to record the recognised letter.
 2) To record a space, input letter 'B' from the keyboard. 
-3) To clear the last alphabet, input letter 'C' from the keyboard
+3) To clear the last alphabet, input letter 'C' from the keyboard**
 
 ![pngtree-aphabets-by-fingers-from-american-sign-language-png-image_3714747](https://github.qualcomm.com/AIBuzz2024/Sign_Language_Tutor/assets/29673/352d6a2f-e87e-48ee-b89c-2fedfe1a9b61)
 
