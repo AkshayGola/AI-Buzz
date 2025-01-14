@@ -23,7 +23,7 @@ MEDIAPIPE_WIDTH = 256
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
-SCORE_THRESHOLD = 0.80
+SCORE_THRESHOLD = 0.70
 key = -1
 
 def main():
@@ -33,7 +33,8 @@ def main():
 
     # 0. Initialize
     MODEL_PATH_LANDMARK = "C:\AI-buzz\project_main\model\mediapipe_hand-mediapipehandlandmarkdetector.tflite"
-    MODEL_GESTURE = "C:\AI-buzz\project_main\DT_gesture_model_akshay.pkl"
+    #MODEL_GESTURE = "C:\AI-buzz\project_main\DT_gesture_model_akshay.pkl"
+    MODEL_GESTURE = "C:\AI-buzz\project_main\KNN_gesture_model_akshay.pkl"
     #LABEL_PATH = utils.get_label_path()
 
     gesture_recognition_model = GestureClassifier()
@@ -153,9 +154,9 @@ def main():
             # Write to the dataset file
             logging_csv(number, mode, pre_processed_landmark_list)
 
-            hand_sign_id = Dtree.predict((np.array(pre_processed_landmark_list)).reshape(1, 42))
-            
-            hand_sign_id = hand_sign_id.item()
+            hand_sign_id = Dtree.predict((np.array(pre_processed_landmark_list)).reshape(1, 45))
+            #hand_sign_id = 0
+            hand_sign_id = int(hand_sign_id.item())
 
             def update_word(word_):
                 nonlocal caption
@@ -164,7 +165,7 @@ def main():
                 caption = caption + word_
                 word = word_
 
-            print(key, word)      # remove during submission
+
             if mode == 0 and key != -1:      # space
                 if (len(caption) == 14):
                     caption = word
@@ -178,7 +179,6 @@ def main():
                 used_word_list = []        # list to avoid repititions
                 try:
                     word_sug_list = check_word_spell(word)
-                    #print(word_sug_list[0])
                     cor_btn['text'] = word_sug_list[0].upper()
                     cor_btn.configure(command=lambda: update_word(cor_btn['text']))
                     used_word_list.append(cor_btn['text'])
@@ -198,7 +198,7 @@ def main():
                     #word_cor_list = auto_comp(word)
                     for word_cor in word_cor_list:
                         if (word_cor[0].upper() not in used_word_list):
-                            print("label1", word_cor[0].upper())
+                            #print("label1", word_cor[0].upper())
                             sug_btn2['text'] = word_cor[0].upper()
                             break
                     sug_btn2.configure(command=lambda: update_word(sug_btn2['text']))
@@ -420,6 +420,11 @@ def pre_process_landmark_akshay(landmark_list):
     rel_dist.append(landmark_list[13][0] - landmark_list[17][0])
     rel_dist.append(landmark_list[13][1] - landmark_list[17][1])
 
+    #finger-tips
+    rel_dist.append(landmark_list[8][0] - landmark_list[12][0])
+    rel_dist.append(landmark_list[12][0] - landmark_list[16][0])
+    rel_dist.append(landmark_list[16][0] - landmark_list[20][0])
+
     # Normalization
     max_value = max(list(map(abs, rel_dist)))
 
@@ -444,23 +449,27 @@ def change_mode(key, mode):
     if key == 104:  # h
         mode = 2
     elif chr(key) == 'q':
-        number = 18
+        number = 10
     elif chr(key) == 'w':
-        number = 19
+        number = 11
     elif chr(key) == 'e':
-        number = 20
+        number = 12
     elif chr(key) == 'r':
-        number = 21
+        number = 13
     elif chr(key) == 't':
-        number = 22
+        number = 14
     elif chr(key) == 'y':
-        number = 23
+        number = 15
     elif chr(key) == 'u':
-        number = 24
+        number = 16
     elif chr(key) == 'i':
-        number = 25
+        number = 17
     elif chr(key) == 'o':
-        number = 26
+        number = 18
+    elif chr(key) == 'p':
+        number = 19
+    elif chr(key) == 'a':
+        number = 20 
     return number, mode
 
 def draw_landmarks(image, landmark_point):
